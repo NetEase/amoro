@@ -24,7 +24,9 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
+import com.google.common.base.Preconditions;
 import com.netease.arctic.api.config.Configurations;
+import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.DefaultOptimizingService;
 import com.netease.arctic.server.RestCatalogService;
 import com.netease.arctic.server.dashboard.controller.CatalogController;
@@ -44,6 +46,7 @@ import com.netease.arctic.server.table.TableService;
 import com.netease.arctic.server.terminal.TerminalManager;
 import com.netease.arctic.utils.JacksonUtil;
 import io.javalin.apibuilder.EndpointGroup;
+import io.javalin.core.security.BasicAuthCredentials;
 import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
@@ -77,6 +80,9 @@ public class DashboardServer {
   private final TerminalController terminalController;
   private final VersionController versionController;
 
+  private final String basicAuthUser;
+  private final String basicAuthPassword;
+
   public DashboardServer(
       Configurations serviceConfig,
       TableService tableService,
@@ -93,6 +99,10 @@ public class DashboardServer {
     this.tableController = new TableController(tableService, tableDescriptor, serviceConfig);
     this.terminalController = new TerminalController(terminalManager);
     this.versionController = new VersionController();
+
+    this.basicAuthUser = serviceConfig.get(ArcticManagementConf.HTTP_SERVER_BASIC_AUTH_USER);
+    this.basicAuthPassword =
+        serviceConfig.get(ArcticManagementConf.HTTP_SERVER_BASIC_AUTH_PASSWORD);
   }
 
   private String indexHtml = "";
@@ -387,12 +397,29 @@ public class DashboardServer {
   public void preHandleRequest(Context ctx) {
     String uriPath = ctx.path();
     if (needApiKeyCheck(uriPath)) {
-      checkApiToken(
-          ctx.method(),
-          ctx.url(),
-          ctx.queryParam("apiKey"),
-          ctx.queryParam("signature"),
-          ctx.queryParamMap());
+      if (basicAuthUser != null && basicAuthPassword != null) {
+        try {
+          BasicAuthCredentials cred = ctx.basicAuthCredentials();
+          Preconditions.checkArgument(
+              basicAuthUser.equals(cred.component1())
+                  && basicAuthPassword.equals(cred.component2()),
+              "Invalid basic auth username or password.");
+        } catch (Exception e) {
+          LOG.error(
+              String.format(
+                  "Failed to authenticate via basic authentication. " + "Request url: %s %s.",
+                  ctx.req.getMethod(), uriPath),
+              e);
+          throw new SignatureCheckException();
+        }
+      } else {
+        checkApiToken(
+            ctx.method(),
+            ctx.url(),
+            ctx.queryParam("apiKey"),
+            ctx.queryParam("signature"),
+            ctx.queryParamMap());
+      }
     } else if (needLoginCheck(uriPath)) {
       if (null == ctx.sessionAttribute("user")) {
         ctx.sessionAttributeMap();
