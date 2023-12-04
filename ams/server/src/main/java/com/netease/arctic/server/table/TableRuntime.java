@@ -24,6 +24,8 @@ import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.BlockerConflictException;
 import com.netease.arctic.server.exception.ObjectNotExistsException;
+import com.netease.arctic.server.manager.MetricsManager;
+import com.netease.arctic.server.metrics.SelfOptimizingStatusDurationMsContent;
 import com.netease.arctic.server.optimizing.OptimizingConfig;
 import com.netease.arctic.server.optimizing.OptimizingProcess;
 import com.netease.arctic.server.optimizing.OptimizingStatus;
@@ -270,6 +272,18 @@ public class TableRuntime extends StatedPersistentBase {
             } else if (optimizingProcess.getOptimizingType() == OptimizingType.FULL) {
               lastFullOptimizingTime = optimizingProcess.getPlanTime();
             }
+            SelfOptimizingStatusDurationMsContent selfOptimizingStatusDurationMsContent =
+                new SelfOptimizingStatusDurationMsContent(tableIdentifier.toString(), "optimizing");
+            selfOptimizingStatusDurationMsContent.setOptimizingProcessId(
+                optimizingProcess.getProcessId());
+            selfOptimizingStatusDurationMsContent.setTargetSnapshotId(
+                optimizingProcess.getTargetSnapshotId());
+            selfOptimizingStatusDurationMsContent.setOptimizingType(
+                optimizingProcess.getOptimizingType().name());
+            selfOptimizingStatusDurationMsContent
+                .tableOptimizingStatusDurationMs()
+                .inc(optimizingProcess.getDuration());
+            MetricsManager.instance().emit(selfOptimizingStatusDurationMsContent);
           }
           updateOptimizingStatus(OptimizingStatus.IDLE);
           optimizingProcess = null;
@@ -279,8 +293,27 @@ public class TableRuntime extends StatedPersistentBase {
   }
 
   private void updateOptimizingStatus(OptimizingStatus status) {
+    long currentTime = System.currentTimeMillis();
+    SelfOptimizingStatusDurationMsContent selfOptimizingStatusDurationMsContent;
+    selfOptimizingStatusDurationMsContent =
+        new SelfOptimizingStatusDurationMsContent(
+            tableIdentifier.toString(), optimizingStatus.displayValue());
+    if (!optimizingStatus.isProcessing()) {
+      selfOptimizingStatusDurationMsContent
+          .tableOptimizingStatusDurationMs()
+          .inc(currentTime - currentStatusStartTime);
+    }
+    if (optimizingStatus == OptimizingStatus.COMMITTING) {
+      selfOptimizingStatusDurationMsContent.setOptimizingType(
+          optimizingProcess.getOptimizingType().name());
+      selfOptimizingStatusDurationMsContent.setOptimizingProcessId(
+          optimizingProcess.getProcessId());
+      selfOptimizingStatusDurationMsContent.setTargetSnapshotId(
+          optimizingProcess.getTargetSnapshotId());
+    }
+    MetricsManager.instance().emit(selfOptimizingStatusDurationMsContent);
     this.optimizingStatus = status;
-    this.currentStatusStartTime = System.currentTimeMillis();
+    this.currentStatusStartTime = currentTime;
   }
 
   private boolean refreshSnapshots(AmoroTable<?> amoroTable) {

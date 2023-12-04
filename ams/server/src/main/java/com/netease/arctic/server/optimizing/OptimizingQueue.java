@@ -32,6 +32,8 @@ import com.netease.arctic.server.ArcticServiceConstants;
 import com.netease.arctic.server.exception.OptimizingClosedException;
 import com.netease.arctic.server.exception.PluginRetryAuthException;
 import com.netease.arctic.server.exception.TaskNotFoundException;
+import com.netease.arctic.server.manager.MetricsManager;
+import com.netease.arctic.server.metrics.SelfOptimizingTotalCostMsContent;
 import com.netease.arctic.server.optimizing.plan.OptimizingPlanner;
 import com.netease.arctic.server.optimizing.plan.TaskDescriptor;
 import com.netease.arctic.server.persistence.PersistentBase;
@@ -591,7 +593,16 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
           tableRuntime.getTableIdentifier(),
           taskMap.size(),
           taskMap.values());
-
+      SelfOptimizingTotalCostMsContent selfOptimizingTotalCostMsContent =
+          new SelfOptimizingTotalCostMsContent(
+              tableRuntime.getTableIdentifier().toString(), processId, optimizingType.name());
+      taskMap
+          .values()
+          .forEach(
+              taskRuntime ->
+                  selfOptimizingTotalCostMsContent
+                      .tableOptimizingTotalCostMs()
+                      .inc(taskRuntime.getCostTime()));
       lock.lock();
       try {
         if (hasCommitted) {
@@ -603,6 +614,7 @@ public class OptimizingQueue extends PersistentBase implements OptimizingService
         status = Status.SUCCESS;
         endTime = System.currentTimeMillis();
         persistProcessCompleted(true);
+        MetricsManager.instance().emit(selfOptimizingTotalCostMsContent);
       } catch (Exception e) {
         LOG.warn("{} Commit optimizing failed ", tableRuntime.getTableIdentifier(), e);
         status = Status.FAILED;
