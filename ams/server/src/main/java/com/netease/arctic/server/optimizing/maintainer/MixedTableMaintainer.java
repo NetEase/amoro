@@ -22,13 +22,12 @@ import static com.netease.arctic.utils.ArcticTableUtil.BLOB_TYPE_OPTIMIZED_SEQUE
 import static org.apache.iceberg.relocated.com.google.common.primitives.Longs.min;
 
 import com.netease.arctic.IcebergFileEntry;
+import com.netease.arctic.ams.api.TableFormat;
 import com.netease.arctic.data.FileNameRules;
-import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.server.table.DataExpirationConfig;
 import com.netease.arctic.server.table.TableRuntime;
 import com.netease.arctic.server.utils.HiveLocationUtil;
-import com.netease.arctic.server.utils.IcebergTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
@@ -63,7 +62,6 @@ import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,40 +81,13 @@ public class MixedTableMaintainer implements TableMaintainer {
 
   private final BaseTableMaintainer baseMaintainer;
 
-  private final Set<String> changeFiles;
-
-  private final Set<String> baseFiles;
-
-  private final Set<String> hiveFiles;
-
   public MixedTableMaintainer(ArcticTable arcticTable) {
     this.arcticTable = arcticTable;
     if (arcticTable.isKeyedTable()) {
-      ChangeTable changeTable = arcticTable.asKeyedTable().changeTable();
-      BaseTable baseTable = arcticTable.asKeyedTable().baseTable();
-      changeMaintainer = new ChangeTableMaintainer(changeTable);
-      baseMaintainer = new BaseTableMaintainer(baseTable);
-      changeFiles =
-          Sets.union(
-              IcebergTableUtil.getAllContentFilePath(changeTable),
-              IcebergTableUtil.getAllStatisticsFilePath(changeTable));
-      baseFiles =
-          Sets.union(
-              IcebergTableUtil.getAllContentFilePath(baseTable),
-              IcebergTableUtil.getAllStatisticsFilePath(baseTable));
+      changeMaintainer = new ChangeTableMaintainer(arcticTable.asKeyedTable().changeTable());
+      baseMaintainer = new BaseTableMaintainer(arcticTable.asKeyedTable().baseTable());
     } else {
       baseMaintainer = new BaseTableMaintainer(arcticTable.asUnkeyedTable());
-      changeFiles = new HashSet<>();
-      baseFiles =
-          Sets.union(
-              IcebergTableUtil.getAllContentFilePath(arcticTable.asUnkeyedTable()),
-              IcebergTableUtil.getAllStatisticsFilePath(arcticTable.asUnkeyedTable()));
-    }
-
-    if (TableTypeUtil.isHive(arcticTable)) {
-      hiveFiles = HiveLocationUtil.getHiveLocation(arcticTable);
-    } else {
-      hiveFiles = new HashSet<>();
     }
   }
 
@@ -313,11 +284,6 @@ public class MixedTableMaintainer implements TableMaintainer {
     }
 
     @Override
-    public Set<String> orphanFileCleanNeedToExcludeFiles() {
-      return Sets.union(changeFiles, Sets.union(baseFiles, hiveFiles));
-    }
-
-    @Override
     @VisibleForTesting
     void expireSnapshots(long mustOlderThan) {
       expireFiles(mustOlderThan);
@@ -341,11 +307,6 @@ public class MixedTableMaintainer implements TableMaintainer {
           now - snapshotsKeepTime(tableRuntime),
           // The latest flink committed snapshot should not be expired for recovering flink job
           fetchLatestFlinkCommittedSnapshotTime(table));
-    }
-
-    @Override
-    protected Set<String> expireSnapshotNeedToExcludeFiles() {
-      return Sets.union(baseFiles, hiveFiles);
     }
 
     @Override
@@ -469,14 +430,24 @@ public class MixedTableMaintainer implements TableMaintainer {
   }
 
   public class BaseTableMaintainer extends IcebergTableMaintainer {
+    private final Set<String> hiveFiles = Sets.newHashSet();
 
     public BaseTableMaintainer(UnkeyedTable unkeyedTable) {
       super(unkeyedTable);
+      if (unkeyedTable.format() == TableFormat.MIXED_HIVE) {
+        hiveFiles.addAll(HiveLocationUtil.getHiveLocation(arcticTable));
+      }
     }
 
     @Override
     public Set<String> orphanFileCleanNeedToExcludeFiles() {
-      return Sets.union(changeFiles, Sets.union(baseFiles, hiveFiles));
+      Set<String> baseFiles = super.orphanFileCleanNeedToExcludeFiles();
+      return Sets.union(baseFiles, hiveFiles);
+    }
+
+    @Override
+    protected Set<String> expireSnapshotNeedToExcludeFiles() {
+      return hiveFiles;
     }
 
     @Override
@@ -511,11 +482,6 @@ public class MixedTableMaintainer implements TableMaintainer {
       } else {
         return Long.MAX_VALUE;
       }
-    }
-
-    @Override
-    protected Set<String> expireSnapshotNeedToExcludeFiles() {
-      return Sets.union(changeFiles, hiveFiles);
     }
   }
 
