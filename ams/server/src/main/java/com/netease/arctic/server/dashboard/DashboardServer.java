@@ -24,7 +24,6 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-import com.google.common.base.Preconditions;
 import com.netease.arctic.api.config.Configurations;
 import com.netease.arctic.server.ArcticManagementConf;
 import com.netease.arctic.server.DefaultOptimizingService;
@@ -53,6 +52,7 @@ import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
 import io.javalin.http.staticfiles.StaticFileConfig;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
