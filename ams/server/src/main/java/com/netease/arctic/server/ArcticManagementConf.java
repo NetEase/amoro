@@ -220,6 +220,18 @@ public class ArcticManagementConf {
           .defaultValue(19090)
           .withDescription("Port that the Http server is bound to.");
 
+  public static final ConfigOption<String> HTTP_SERVER_BASIC_AUTH_USER =
+      ConfigOptions.key("http-server.basic-auth-user")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("The user name of the basic authentication used by REST APIs.");
+
+  public static final ConfigOption<String> HTTP_SERVER_BASIC_AUTH_PASSWORD =
+      ConfigOptions.key("http-server.basic-auth-password")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("The password of the basic authentication used by REST APIs.");
+
   public static final ConfigOption<Integer> OPTIMIZING_COMMIT_THREAD_COUNT =
       ConfigOptions.key("self-optimizing.commit-thread-count")
           .intType()
