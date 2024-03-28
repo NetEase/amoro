@@ -18,11 +18,10 @@
 
 package com.netease.arctic.api.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
+import com.netease.arctic.utils.TimeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Objects;
@@ -30,6 +29,8 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.paimon.shade.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.apache.paimon.shade.com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +59,9 @@ public class DataExpirationConfig {
   // data-expire.base-on-rule
   @JsonProperty(defaultValue = TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)
   private BaseOnRule baseOnRule;
+
+  // Retention time must be positive
+  public static final long INVALID_RETENTION_TIME = 0L;
 
   @VisibleForTesting
   public enum ExpireLevel {
@@ -121,13 +125,13 @@ public class DataExpirationConfig {
         CompatiblePropertyUtil.propertyAsString(
             properties, TableProperties.DATA_EXPIRATION_FIELD, null);
     Types.NestedField field = table.schema().findField(expirationField);
-    Preconditions.checkArgument(
+    com.google.common.base.Preconditions.checkArgument(
         StringUtils.isNoneBlank(expirationField) && null != field,
         String.format(
             "Field(%s) used to determine data expiration is illegal for table(%s)",
             expirationField, table.name()));
     Type.TypeID typeID = field.type().typeId();
-    Preconditions.checkArgument(
+    com.google.common.base.Preconditions.checkArgument(
         FIELD_TYPES.contains(typeID),
         String.format(
             "The type(%s) of filed(%s) is incompatible for table(%s)",
@@ -139,14 +143,10 @@ public class DataExpirationConfig {
                 properties,
                 TableProperties.DATA_EXPIRATION_LEVEL,
                 TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT));
-
-    String retention =
-        CompatiblePropertyUtil.propertyAsString(
-            properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null);
-    if (StringUtils.isNotBlank(retention)) {
-      retentionTime = ConfigHelpers.TimeUtils.parseDuration(retention).toMillis();
-    }
-
+    retentionTime =
+        parseRetentionToMillis(
+            CompatiblePropertyUtil.propertyAsString(
+                properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null));
     dateTimePattern =
         CompatiblePropertyUtil.propertyAsString(
             properties,
@@ -169,47 +169,55 @@ public class DataExpirationConfig {
     boolean gcEnabled =
         CompatiblePropertyUtil.propertyAsBoolean(
             properties, org.apache.iceberg.TableProperties.GC_ENABLED, true);
-    DataExpirationConfig config =
-        new DataExpirationConfig()
-            .setEnabled(
-                gcEnabled
-                    && CompatiblePropertyUtil.propertyAsBoolean(
-                        properties,
-                        TableProperties.ENABLE_DATA_EXPIRATION,
-                        TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
-            .setExpirationLevel(
-                ExpireLevel.fromString(
-                    CompatiblePropertyUtil.propertyAsString(
-                        properties,
-                        TableProperties.DATA_EXPIRATION_LEVEL,
-                        TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT)))
-            .setExpirationField(
-                CompatiblePropertyUtil.propertyAsString(
-                    properties, TableProperties.DATA_EXPIRATION_FIELD, null))
-            .setDateTimePattern(
-                CompatiblePropertyUtil.propertyAsString(
-                    properties,
-                    TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN,
-                    TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN_DEFAULT))
-            .setNumberDateFormat(
-                CompatiblePropertyUtil.propertyAsString(
-                    properties,
-                    TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
-                    TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT))
-            .setBaseOnRule(
-                BaseOnRule.fromString(
-                    CompatiblePropertyUtil.propertyAsString(
-                        properties,
-                        TableProperties.DATA_EXPIRATION_BASE_ON_RULE,
-                        TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)));
-    String retention =
-        CompatiblePropertyUtil.propertyAsString(
-            properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null);
-    if (StringUtils.isNotBlank(retention)) {
-      config.setRetentionTime(ConfigHelpers.TimeUtils.parseDuration(retention).toMillis());
-    }
 
-    return config;
+    return new DataExpirationConfig()
+        .setEnabled(
+            gcEnabled
+                && CompatiblePropertyUtil.propertyAsBoolean(
+                    properties,
+                    TableProperties.ENABLE_DATA_EXPIRATION,
+                    TableProperties.ENABLE_DATA_EXPIRATION_DEFAULT))
+        .setExpirationLevel(
+            ExpireLevel.fromString(
+                CompatiblePropertyUtil.propertyAsString(
+                    properties,
+                    TableProperties.DATA_EXPIRATION_LEVEL,
+                    TableProperties.DATA_EXPIRATION_LEVEL_DEFAULT)))
+        .setExpirationField(
+            CompatiblePropertyUtil.propertyAsString(
+                properties, TableProperties.DATA_EXPIRATION_FIELD, null))
+        .setDateTimePattern(
+            CompatiblePropertyUtil.propertyAsString(
+                properties,
+                TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN,
+                TableProperties.DATA_EXPIRATION_DATE_STRING_PATTERN_DEFAULT))
+        .setNumberDateFormat(
+            CompatiblePropertyUtil.propertyAsString(
+                properties,
+                TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT,
+                TableProperties.DATA_EXPIRATION_DATE_NUMBER_FORMAT_DEFAULT))
+        .setBaseOnRule(
+            BaseOnRule.fromString(
+                CompatiblePropertyUtil.propertyAsString(
+                    properties,
+                    TableProperties.DATA_EXPIRATION_BASE_ON_RULE,
+                    TableProperties.DATA_EXPIRATION_BASE_ON_RULE_DEFAULT)))
+        .setRetentionTime(
+            parseRetentionToMillis(
+                CompatiblePropertyUtil.propertyAsString(
+                    properties, TableProperties.DATA_EXPIRATION_RETENTION_TIME, null)));
+  }
+
+  private static long parseRetentionToMillis(String retention) {
+    try {
+      return TimeUtil.estimatedMills(retention);
+    } catch (Exception e) {
+      return INVALID_RETENTION_TIME;
+    }
+  }
+
+  public boolean isPositive() {
+    return retentionTime > INVALID_RETENTION_TIME;
   }
 
   public boolean isEnabled() {
@@ -307,7 +315,7 @@ public class DataExpirationConfig {
 
   public boolean isValid(Types.NestedField field, String name) {
     return isEnabled()
-        && getRetentionTime() > 0
+        && isPositive()
         && validateExpirationField(field, name, getExpirationField());
   }
 
