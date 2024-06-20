@@ -148,7 +148,12 @@ public interface TableService extends CatalogService, TableManager {
    */
   List<Blocker> getBlockers(TableIdentifier tableIdentifier);
 
-  List<TableRuntimeBean> getTableRuntimesForAllGroup(int limit, int offset);
-
+  /**
+   * @param optimizerGroup the info for the given optimizerGroup, will be null if we want info from
+   *     all group.
+   * @param limit
+   * @param offset
+   * @return
+   */
   List<TableRuntimeBean> getTableRuntimes(String optimizerGroup, int limit, int offset);
 }

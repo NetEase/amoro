@@ -325,12 +325,6 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
         mapper -> mapper.selectTableRuntimesForOptimizerGroup(optimizerGroup, limit, offset));
   }
 
-  @Override
-  public List<TableRuntimeBean> getTableRuntimesForAllGroup(int limit, int offset) {
-    checkStarted();
-    return getAs(TableMetaMapper.class, mapper -> mapper.selectTableRuntimes(limit, offset));
-  }
-
   private InternalCatalog getInternalCatalog(String catalogName) {
     return Optional.ofNullable(internalCatalogMap.get(catalogName))
         .orElseThrow(() -> new ObjectNotExistsException("Catalog " + catalogName));

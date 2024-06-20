@@ -432,55 +432,10 @@ public interface TableMetaMapper {
           + " last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time, optimizing_status,"
           + " optimizing_status_start_time, optimizing_process_id,"
           + " optimizer_group, table_config, pending_input FROM table_runtime"
-          + " ORDER BY CASE optimizing_status WHEN 'MAJOR_OPTIMIZING' THEN 1 WHEN 'MINOR_OPTIMIZING' THEN 2 "
-          + " WHEN 'COMMITTING' THEN 3 WHEN 'PLANNING' THEN 4 WHEN 'PENDING' THEN 5 ELSE 6 END,"
-          + " optimizing_status_start_time desc limit #{limitCount} offset #{offset}")
-  @Results({
-    @Result(property = "tableId", column = "table_id"),
-    @Result(property = "catalogName", column = "catalog_name"),
-    @Result(property = "dbName", column = "db_name"),
-    @Result(property = "tableName", column = "table_name"),
-    @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
-    @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
-    @Result(property = "lastOptimizedChangeSnapshotId", column = "last_optimized_snapshotId"),
-    @Result(
-        property = "lastOptimizedChangeSnapshotId",
-        column = "last_optimized_change_snapshotId"),
-    @Result(
-        property = "lastMajorOptimizingTime",
-        column = "last_major_optimizing_time",
-        typeHandler = Long2TsConverter.class),
-    @Result(
-        property = "lastMinorOptimizingTime",
-        column = "last_minor_optimizing_time",
-        typeHandler = Long2TsConverter.class),
-    @Result(
-        property = "lastFullOptimizingTime",
-        column = "last_full_optimizing_time",
-        typeHandler = Long2TsConverter.class),
-    @Result(property = "optimizingStatus", column = "optimizing_status"),
-    @Result(
-        property = "optimizingStatusStartTime",
-        column = "optimizing_status_start_time",
-        typeHandler = Long2TsConverter.class),
-    @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
-    @Result(property = "optimizerGroup", column = "optimizer_group"),
-    @Result(property = "pendingInput", column = "pending_input"),
-    @Result(property = "tableConfig", column = "table_config"),
-  })
-  List<TableRuntimeBean> selectTableRuntimes(
-      @Param("limitCount") int limit, @Param("offset") int offset);
-
-  @Select(
-      "SELECT table_id, catalog_name, db_name, table_name, current_snapshot_id, "
-          + "current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId,"
-          + " last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time, optimizing_status,"
-          + " optimizing_status_start_time, optimizing_process_id,"
-          + " optimizer_group, table_config, pending_input FROM table_runtime"
-          + " WHERE optimizer_group = #{optimizerGroup} ORDER BY CASE optimizing_status"
-          + " WHEN 'MAJOR_OPTIMIZING' THEN 1 WHEN 'MINOR_OPTIMIZING' THEN 2 "
-          + " WHEN 'COMMITTING' THEN 3 WHEN 'PLANNING' THEN 4 WHEN 'PENDING' THEN 5 ELSE 6 END,"
-          + " optimizing_status_start_time desc limit #{limitCount} offset #{offset}")
+          + " WHERE CASE WHEN '#{optimizerGroup}'!='all' THEN optimizer_group='#{optimizerGroup}' ELSE 1=1 END"
+          + " ORDER BY CASE WHEN optimizing_status = 'MAJOR_OPTIMIZING' THEN 1 WHEN optimizing_status='MINOR_OPTIMIZING' THEN 2 "
+          + " WHEN optimizing_status='COMMITTING' THEN 3 WHEN optimizing_status='PLANNING' THEN 4 WHEN optimizing_status='PENDING' THEN 5 ELSE 6 END,"
+          + " optimizing_status_start_time DESC limit #{limitCount} offset #{offset}")
   @Results({
     @Result(property = "tableId", column = "table_id"),
     @Result(property = "catalogName", column = "catalog_name"),

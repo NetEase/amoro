@@ -67,12 +67,7 @@ public class OptimizerController {
     int offset = (page - 1) * pageSize;
 
     // get all info from underlying table table_runtime
-    List<TableRuntimeBean> tableRuntimeBeans;
-    if (ALL_GROUP.equals(optimizerGroup)) {
-      tableRuntimeBeans = tableService.getTableRuntimesForAllGroup(pageSize, offset);
-    } else {
-      tableRuntimeBeans = tableService.getTableRuntimes(optimizerGroup, pageSize, offset);
-    }
+    List<TableRuntimeBean> tableRuntimeBeans = tableService.getTableRuntimes(optimizerGroup, pageSize, offset);
 
     List<TableRuntime> tableRuntimes = new ArrayList<>();
     List<ServerTableIdentifier> tables = new ArrayList<>();
