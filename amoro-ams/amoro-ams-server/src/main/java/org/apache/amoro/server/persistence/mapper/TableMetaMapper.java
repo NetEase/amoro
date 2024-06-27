@@ -19,14 +19,13 @@
 package org.apache.amoro.server.persistence.mapper;
 
 import org.apache.amoro.api.ServerTableIdentifier;
-import org.apache.amoro.server.dashboard.model.TableRuntimeBean;
 import org.apache.amoro.server.persistence.converter.JsonObjectConverter;
 import org.apache.amoro.server.persistence.converter.Long2TsConverter;
 import org.apache.amoro.server.persistence.converter.Map2StringConverter;
 import org.apache.amoro.server.persistence.converter.MapLong2StringConverter;
 import org.apache.amoro.server.table.TableMetadata;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
@@ -427,15 +426,17 @@ public interface TableMetaMapper {
   List<TableRuntimeMeta> selectTableRuntimeMetas();
 
   @Select(
-      "SELECT table_id, catalog_name, db_name, table_name, current_snapshot_id, "
+      value = "<script> SELECT table_id, catalog_name, db_name, table_name, current_snapshot_id, "
           + "current_change_snapshotId, last_optimized_snapshotId, last_optimized_change_snapshotId,"
           + " last_major_optimizing_time, last_minor_optimizing_time, last_full_optimizing_time, optimizing_status,"
           + " optimizing_status_start_time, optimizing_process_id,"
           + " optimizer_group, table_config, pending_input FROM table_runtime"
-          + " WHERE CASE WHEN '#{optimizerGroup}'!='all' THEN optimizer_group='#{optimizerGroup}' ELSE 1=1 END"
-          + " ORDER BY CASE WHEN optimizing_status = 'MAJOR_OPTIMIZING' THEN 1 WHEN optimizing_status='MINOR_OPTIMIZING' THEN 2 "
-          + " WHEN optimizing_status='COMMITTING' THEN 3 WHEN optimizing_status='PLANNING' THEN 4 WHEN optimizing_status='PENDING' THEN 5 ELSE 6 END,"
-          + " optimizing_status_start_time DESC limit #{limitCount} offset #{offset}")
+          + " WHERE 1=1 "
+          + "<when test='optimizerGroup != null'> AND  optimizer_group=#{optimizerGroup} </when> "
+          + " ORDER BY CASE WHEN 'MAJOR_OPTIMIZING' THEN 1 WHEN 'MINOR_OPTIMIZING' THEN 2 "
+          + " WHEN 'COMMITTING' THEN 3 WHEN 'PLANNING' THEN 4 WHEN 'PENDING' THEN 5 ELSE 6 END,"
+          + " optimizing_status_start_time DESC limit #{limitCount} offset #{offsetNum}"
+          + "</script>", databaseId = "mysql")
   @Results({
     @Result(property = "tableId", column = "table_id"),
     @Result(property = "catalogName", column = "catalog_name"),
@@ -461,16 +462,22 @@ public interface TableMetaMapper {
         typeHandler = Long2TsConverter.class),
     @Result(property = "optimizingStatus", column = "optimizing_status"),
     @Result(
-        property = "optimizingStatusStartTime",
+        property = "currentStatusStartTime",
         column = "optimizing_status_start_time",
         typeHandler = Long2TsConverter.class),
     @Result(property = "optimizingProcessId", column = "optimizing_process_id"),
     @Result(property = "optimizerGroup", column = "optimizer_group"),
-    @Result(property = "pendingInput", column = "pending_input"),
-    @Result(property = "tableConfig", column = "table_config"),
+    @Result(
+        property = "pendingInput",
+        column = "pending_input",
+        typeHandler = JsonObjectConverter.class),
+    @Result(
+        property = "tableConfig",
+        column = "table_config",
+        typeHandler = JsonObjectConverter.class),
   })
-  List<TableRuntimeBean> selectTableRuntimesForOptimizerGroup(
+  List<TableRuntimeMeta> selectTableRuntimesForOptimizerGroup(
       @Param("optimizerGroup") String optimizerGroup,
       @Param("limitCount") int limitCount,
-      @Param("offset") int offset);
+      @Param("offsetNum") int offset);
 }

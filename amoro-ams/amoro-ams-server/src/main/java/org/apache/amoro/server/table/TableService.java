@@ -24,7 +24,7 @@ import org.apache.amoro.api.Blocker;
 import org.apache.amoro.api.ServerTableIdentifier;
 import org.apache.amoro.api.TableIdentifier;
 import org.apache.amoro.server.catalog.CatalogService;
-import org.apache.amoro.server.dashboard.model.TableRuntimeBean;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 
 import java.util.List;
 import java.util.Map;
@@ -155,5 +155,5 @@ public interface TableService extends CatalogService, TableManager {
    * @param offset
    * @return
    */
-  List<TableRuntimeBean> getTableRuntimes(String optimizerGroup, int limit, int offset);
+  List<TableRuntimeMeta> getTableRuntimes(String optimizerGroup, int limit, int offset);
 }

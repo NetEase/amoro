@@ -35,6 +35,7 @@ import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.TaskRuntime;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.OptimizingMapper;
 import org.apache.amoro.server.persistence.mapper.TableBlockerMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
@@ -97,7 +98,7 @@ public class TableRuntime extends StatedPersistentBase {
   private final TableOptimizingMetrics optimizingMetrics;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
-  protected TableRuntime(
+  public TableRuntime(
       ServerTableIdentifier tableIdentifier,
       TableRuntimeHandler tableHandler,
       Map<String, String> properties) {
@@ -110,7 +111,7 @@ public class TableRuntime extends StatedPersistentBase {
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
   }
 
-  protected TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
+  public TableRuntime(TableRuntimeMeta tableRuntimeMeta, TableRuntimeHandler tableHandler) {
     Preconditions.checkNotNull(tableRuntimeMeta, tableHandler);
     this.tableHandler = tableHandler;
     this.tableIdentifier =

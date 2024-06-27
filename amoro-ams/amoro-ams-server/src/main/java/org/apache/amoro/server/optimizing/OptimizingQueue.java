@@ -36,7 +36,7 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ExceptionUtil;

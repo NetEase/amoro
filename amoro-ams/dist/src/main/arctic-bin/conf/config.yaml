@@ -84,24 +84,24 @@ ams:
     thread-count: 3
     interval: 60000 # 1min
 
+#  database:
+#    type: derby
+#    jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
+#    url: jdbc:derby:/tmp/amoro/derby;create=true
+#    connection-pool-max-total: 20
+#    connection-pool-max-idle: 16
+#    connection-pool-max-wait-millis: 1000
+
+  #    MySQL database configuration.
   database:
-    type: derby
-    jdbc-driver-class: org.apache.derby.jdbc.EmbeddedDriver
-    url: jdbc:derby:/tmp/amoro/derby;create=true
+    type: mysql
+    jdbc-driver-class: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: 'amoro'
+    password: '123456'
     connection-pool-max-total: 20
     connection-pool-max-idle: 16
     connection-pool-max-wait-millis: 1000
-
-#    MySQL database configuration.
-#    database:
-#      type: mysql
-#      jdbc-driver-class: com.mysql.cj.jdbc.Driver
-#      url: jdbc:mysql://127.0.0.1:3306/db?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
-#      username: root
-#      password: root
-#      connection-pool-max-total: 20
-#      connection-pool-max-idle: 16
-#      connection-pool-max-wait-millis: 1000
 
   #  Postgres database configuration.
   #  database:

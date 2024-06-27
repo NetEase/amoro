@@ -50,7 +50,7 @@ import org.apache.amoro.server.resource.OptimizerThread;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.AMSTableTestBase;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.amoro.table.UnkeyedTable;

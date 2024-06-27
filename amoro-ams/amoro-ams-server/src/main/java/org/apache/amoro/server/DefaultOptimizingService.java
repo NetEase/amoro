@@ -49,7 +49,7 @@ import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.DefaultTableService;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.table.TableRuntimeMeta;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.table.TableService;
 import org.apache.amoro.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;

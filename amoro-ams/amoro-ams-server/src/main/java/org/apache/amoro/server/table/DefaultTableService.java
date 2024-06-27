@@ -34,13 +34,13 @@ import org.apache.amoro.server.catalog.CatalogBuilder;
 import org.apache.amoro.server.catalog.ExternalCatalog;
 import org.apache.amoro.server.catalog.InternalCatalog;
 import org.apache.amoro.server.catalog.ServerCatalog;
-import org.apache.amoro.server.dashboard.model.TableRuntimeBean;
 import org.apache.amoro.server.exception.AlreadyExistsException;
 import org.apache.amoro.server.exception.IllegalMetadataException;
 import org.apache.amoro.server.exception.ObjectNotExistsException;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.persistence.StatedPersistentBase;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.persistence.mapper.CatalogMetaMapper;
 import org.apache.amoro.server.persistence.mapper.TableMetaMapper;
 import org.apache.amoro.server.table.blocker.TableBlocker;
@@ -318,7 +318,7 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
   }
 
   @Override
-  public List<TableRuntimeBean> getTableRuntimes(String optimizerGroup, int limit, int offset) {
+  public List<TableRuntimeMeta> getTableRuntimes(String optimizerGroup, int limit, int offset) {
     checkStarted();
     return getAs(
         TableMetaMapper.class,

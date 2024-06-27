@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.amoro.server.table;
+package org.apache.amoro.server.persistence;
 
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.config.TableConfiguration;
@@ -24,6 +24,8 @@ import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
+import org.apache.amoro.server.table.TableManager;
+import org.apache.amoro.server.table.TableRuntime;
 
 import java.util.Map;
 
