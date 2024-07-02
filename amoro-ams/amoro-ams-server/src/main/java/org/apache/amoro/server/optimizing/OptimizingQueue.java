@@ -36,7 +36,6 @@ import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.QuotaProvider;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.utils.CompatiblePropertyUtil;
 import org.apache.amoro.utils.ExceptionUtil;
@@ -93,7 +92,7 @@ public class OptimizingQueue extends PersistentBase {
       ResourceGroup optimizerGroup,
       QuotaProvider quotaProvider,
       Executor planExecutor,
-      List<TableRuntimeMeta> tableRuntimeMetaList,
+      List<TableRuntime> tableRuntimeMetaList,
       int maxPlanningParallelism) {
     Preconditions.checkNotNull(optimizerGroup, "Optimizer group can not be null");
     this.planExecutor = planExecutor;
@@ -109,11 +108,11 @@ public class OptimizingQueue extends PersistentBase {
     tableRuntimeMetaList.forEach(this::initTableRuntime);
   }
 
-  private void initTableRuntime(TableRuntimeMeta tableRuntimeMeta) {
-    TableRuntime tableRuntime = tableRuntimeMeta.getTableRuntime();
+  private void initTableRuntime(TableRuntime tableRuntime) {
+    //    TableRuntime tableRuntime = tableRuntimeMeta.getTableRuntime();
     if (tableRuntime.getOptimizingStatus().isProcessing()
-        && tableRuntimeMeta.getOptimizingProcessId() != 0) {
-      tableRuntime.recover(new TableOptimizingProcess(tableRuntimeMeta));
+        && tableRuntime.getOptimizingProcess().getProcessId() != 0) {
+      tableRuntime.recover(new TableOptimizingProcess(tableRuntime));
     }
 
     if (tableRuntime.isOptimizingEnabled()) {
@@ -122,7 +121,7 @@ public class OptimizingQueue extends PersistentBase {
       if (!tableRuntime.getOptimizingStatus().isProcessing()) {
         scheduler.addTable(tableRuntime);
       } else if (tableRuntime.getOptimizingStatus() != OptimizingStatus.COMMITTING) {
-        tableQueue.offer(new TableOptimizingProcess(tableRuntimeMeta));
+        tableQueue.offer(new TableOptimizingProcess(tableRuntime));
       }
     } else {
       OptimizingProcess process = tableRuntime.getOptimizingProcess();
@@ -376,22 +375,23 @@ public class OptimizingQueue extends PersistentBase {
       beginAndPersistProcess();
     }
 
-    public TableOptimizingProcess(TableRuntimeMeta tableRuntimeMeta) {
-      processId = tableRuntimeMeta.getOptimizingProcessId();
-      tableRuntime = tableRuntimeMeta.getTableRuntime();
-      optimizingType = tableRuntimeMeta.getOptimizingType();
-      targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
-      targetChangeSnapshotId = tableRuntimeMeta.getTargetChangeSnapshotId();
-      planTime = tableRuntimeMeta.getPlanTime();
-      if (tableRuntimeMeta.getFromSequence() != null) {
-        fromSequence = tableRuntimeMeta.getFromSequence();
+    public TableOptimizingProcess(TableRuntime tableRuntime) {
+      processId = tableRuntime.getOptimizingProcess().getProcessId();
+      this.tableRuntime = tableRuntime;
+      optimizingType = tableRuntime.getOptimizingProcess().getOptimizingType();
+      ;
+      targetSnapshotId = tableRuntime.getTargetSnapshotId();
+      targetChangeSnapshotId = tableRuntime.getTargetChangeSnapshotId();
+      planTime = tableRuntime.getLastPlanTime();
+      if (tableRuntime.getFromSequence() != null) {
+        fromSequence = tableRuntime.getFromSequence();
       }
-      if (tableRuntimeMeta.getToSequence() != null) {
-        toSequence = tableRuntimeMeta.getToSequence();
+      if (tableRuntime.getToSequence() != null) {
+        toSequence = tableRuntime.getToSequence();
       }
       loadTaskRuntimes(this);
       if (this.status != OptimizingProcess.Status.CLOSED) {
-        tableRuntimeMeta.getTableRuntime().recover(this);
+        tableRuntime.recover(this);
       }
     }
 

@@ -98,6 +98,13 @@ public class TableRuntime extends StatedPersistentBase {
   private final TableOptimizingMetrics optimizingMetrics;
   private final ReentrantLock blockerLock = new ReentrantLock();
 
+  private long targetSnapshotId;
+
+  private long targetChangeSnapshotId;
+
+  private Map<java.lang.String, java.lang.Long> fromSequence;
+  private Map<java.lang.String, java.lang.Long> toSequence;
+
   public TableRuntime(
       ServerTableIdentifier tableIdentifier,
       TableRuntimeHandler tableHandler,
@@ -139,6 +146,10 @@ public class TableRuntime extends StatedPersistentBase {
     this.pendingInput = tableRuntimeMeta.getPendingInput();
     optimizingMetrics = new TableOptimizingMetrics(tableIdentifier);
     optimizingMetrics.statusChanged(optimizingStatus, this.currentStatusStartTime);
+    this.targetSnapshotId = tableRuntimeMeta.getTargetSnapshotId();
+    this.targetChangeSnapshotId = tableRuntimeMeta.getTargetChangeSnapshotId();
+    this.fromSequence = tableRuntimeMeta.getFromSequence();
+    this.toSequence = tableRuntimeMeta.getToSequence();
   }
 
   public void recover(OptimizingProcess optimizingProcess) {
@@ -454,6 +465,38 @@ public class TableRuntime extends StatedPersistentBase {
 
   public void setLastPlanTime(long lastPlanTime) {
     this.lastPlanTime = lastPlanTime;
+  }
+
+  public long getTargetSnapshotId() {
+    return targetSnapshotId;
+  }
+
+  public void setTargetSnapshotId(long targetSnapshotId) {
+    this.targetSnapshotId = targetSnapshotId;
+  }
+
+  public long getTargetChangeSnapshotId() {
+    return targetChangeSnapshotId;
+  }
+
+  public void setTargetChangeSnapshotId(long targetChangeSnapshotId) {
+    this.targetChangeSnapshotId = targetChangeSnapshotId;
+  }
+
+  public Map<String, Long> getFromSequence() {
+    return fromSequence;
+  }
+
+  public void setFromSequence(Map<String, Long> fromSequence) {
+    this.fromSequence = fromSequence;
+  }
+
+  public Map<String, Long> getToSequence() {
+    return toSequence;
+  }
+
+  public void setToSequence(Map<String, Long> toSequence) {
+    this.toSequence = toSequence;
   }
 
   @Override

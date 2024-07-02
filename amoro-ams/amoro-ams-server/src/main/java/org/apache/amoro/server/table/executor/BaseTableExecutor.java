@@ -25,7 +25,6 @@ import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.table.RuntimeHandlerChain;
 import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
@@ -63,9 +62,9 @@ public abstract class BaseTableExecutor extends RuntimeHandlerChain {
   }
 
   @Override
-  protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
+  protected void initHandler(List<TableRuntime> tableRuntimeMetaList) {
     tableRuntimeMetaList.stream()
-        .map(tableRuntimeMeta -> tableRuntimeMeta.getTableRuntime())
+        //        .map(tableRuntimeMeta -> tableRuntimeMeta.getTableRuntime())
         .filter(tableRuntime -> enabled(tableRuntime))
         .forEach(
             tableRuntime -> {

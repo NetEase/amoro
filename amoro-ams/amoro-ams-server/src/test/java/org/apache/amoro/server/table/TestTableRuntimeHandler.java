@@ -32,7 +32,6 @@ import org.apache.amoro.hive.catalog.HiveTableTestHelper;
 import org.apache.amoro.server.manager.EventsManager;
 import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.table.MixedTable;
 import org.apache.amoro.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -93,7 +92,8 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     tableService.initialize();
     Assert.assertEquals(1, handler.getInitTables().size());
     Assert.assertEquals(
-        createTableId.getId().longValue(), handler.getInitTables().get(0).getTableId());
+        (Long) createTableId.getId().longValue(),
+        handler.getInitTables().get(0).getTableIdentifier().getId());
 
     // test change properties
     MixedTable mixedTable = (MixedTable) tableService().loadTable(createTableId).originalTable();
@@ -132,7 +132,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
 
   static class TestHandler extends RuntimeHandlerChain {
 
-    private final List<TableRuntimeMeta> initTables = Lists.newArrayList();
+    private final List<TableRuntime> initTables = Lists.newArrayList();
     private final List<Pair<TableRuntime, OptimizingStatus>> statusChangedTables =
         Lists.newArrayList();
     private final List<Pair<TableRuntime, TableConfiguration>> configChangedTables =
@@ -163,7 +163,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
     }
 
     @Override
-    protected void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList) {
+    protected void initHandler(List<TableRuntime> tableRuntimeMetaList) {
       initTables.addAll(tableRuntimeMetaList);
     }
 
@@ -172,7 +172,7 @@ public class TestTableRuntimeHandler extends AMSTableTestBase {
       disposed = true;
     }
 
-    public List<TableRuntimeMeta> getInitTables() {
+    public List<TableRuntime> getInitTables() {
       return initTables;
     }
 

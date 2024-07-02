@@ -24,7 +24,6 @@ import org.apache.amoro.server.optimizing.OptimizingProcess;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
 import org.apache.amoro.server.optimizing.OptimizingType;
 import org.apache.amoro.server.optimizing.plan.OptimizingEvaluator;
-import org.apache.amoro.server.table.TableManager;
 import org.apache.amoro.server.table.TableRuntime;
 
 import java.util.Map;
@@ -63,19 +62,19 @@ public class TableRuntimeMeta {
 
   public TableRuntimeMeta() {}
 
-  public TableRuntime constructTableRuntime(TableManager initializer) {
-    if (tableRuntime == null) {
-      tableRuntime = new TableRuntime(this, initializer);
-    }
-    return tableRuntime;
-  }
-
-  public TableRuntime getTableRuntime() {
-    if (tableRuntime == null) {
-      throw new IllegalStateException("TableRuntime is not constructed yet.");
-    }
-    return tableRuntime;
-  }
+  //  public TableRuntime constructTableRuntime(TableManager initializer) {
+  //    if (tableRuntime == null) {
+  //      tableRuntime = new TableRuntime(this, initializer);
+  //    }
+  //    return tableRuntime;
+  //  }
+  //
+  //  public TableRuntime getTableRuntime() {
+  //    if (tableRuntime == null) {
+  //      throw new IllegalStateException("TableRuntime is not constructed yet.");
+  //    }
+  //    return tableRuntime;
+  //  }
 
   public long getTargetSnapshotId() {
     return targetSnapshotId;

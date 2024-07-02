@@ -28,10 +28,10 @@ import org.apache.amoro.server.DefaultOptimizingService;
 import org.apache.amoro.server.dashboard.model.OptimizerInstanceInfo;
 import org.apache.amoro.server.dashboard.model.OptimizerResourceInfo;
 import org.apache.amoro.server.dashboard.model.TableOptimizingInfo;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.dashboard.response.OkResponse;
 import org.apache.amoro.server.dashboard.response.PageResult;
 import org.apache.amoro.server.dashboard.utils.OptimizingUtil;
+import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.OptimizerInstance;
 import org.apache.amoro.server.resource.ResourceContainers;
@@ -67,7 +67,8 @@ public class OptimizerController {
     int offset = (page - 1) * pageSize;
 
     // get all info from underlying table table_runtime
-    List<TableRuntimeMeta> tableRuntimeBeans = tableService.getTableRuntimes("abcd", pageSize, offset);
+    List<TableRuntimeMeta> tableRuntimeBeans =
+        tableService.getTableRuntimes("abcd", pageSize, offset);
 
     List<TableRuntime> tableRuntimes = new ArrayList<>();
     List<ServerTableIdentifier> tables = new ArrayList<>();

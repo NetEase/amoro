@@ -22,7 +22,6 @@ import org.apache.amoro.AmoroTable;
 import org.apache.amoro.TableFormat;
 import org.apache.amoro.api.config.TableConfiguration;
 import org.apache.amoro.server.optimizing.OptimizingStatus;
-import org.apache.amoro.server.persistence.TableRuntimeMeta;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,16 +51,15 @@ public abstract class RuntimeHandlerChain {
     }
   }
 
-  public final void initialize(List<TableRuntimeMeta> tableRuntimeMetaList) {
-    List<TableRuntimeMeta> supportedtableRuntimeMetaList =
-        tableRuntimeMetaList.stream()
-            .filter(
-                tableRuntimeMeta -> formatSupported(tableRuntimeMeta.getTableRuntime().getFormat()))
+  public final void initialize(List<TableRuntime> tableRuntimes) {
+    List<TableRuntime> supportedtableRuntimeMetaList =
+        tableRuntimes.stream()
+            .filter(runtime -> formatSupported(runtime.getFormat()))
             .collect(Collectors.toList());
     initHandler(supportedtableRuntimeMetaList);
     initialized = true;
     if (next != null) {
-      next.initialize(tableRuntimeMetaList);
+      next.initialize(tableRuntimes);
     }
   }
 
@@ -148,7 +146,7 @@ public abstract class RuntimeHandlerChain {
 
   protected abstract void handleTableRemoved(TableRuntime tableRuntime);
 
-  protected abstract void initHandler(List<TableRuntimeMeta> tableRuntimeMetaList);
+  protected abstract void initHandler(List<TableRuntime> tableRuntimeMetaList);
 
   protected abstract void doDispose();
 }

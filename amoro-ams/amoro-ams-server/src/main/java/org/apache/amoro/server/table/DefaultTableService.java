@@ -56,6 +56,7 @@ import org.apache.iceberg.relocated.com.google.common.util.concurrent.ThreadFact
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -362,15 +363,19 @@ public class DefaultTableService extends StatedPersistentBase implements TableSe
 
     List<TableRuntimeMeta> tableRuntimeMetaList =
         getAs(TableMetaMapper.class, TableMetaMapper::selectTableRuntimeMetas);
+    List<TableRuntime> tableRuntimes = new ArrayList<>(tableRuntimeMetaList.size());
     tableRuntimeMetaList.forEach(
         tableRuntimeMeta -> {
-          TableRuntime tableRuntime = tableRuntimeMeta.constructTableRuntime(this);
+          TableRuntime tableRuntime =
+              new TableRuntime(
+                  tableRuntimeMeta, this); // tableRuntimeMeta.constructTableRuntime(this);
           tableRuntimeMap.put(tableRuntime.getTableIdentifier(), tableRuntime);
           tableRuntime.registerMetric(MetricManager.getInstance().getGlobalRegistry());
+          tableRuntimes.add(tableRuntime);
         });
 
     if (headHandler != null) {
-      headHandler.initialize(tableRuntimeMetaList);
+      headHandler.initialize(tableRuntimes);
     }
     if (tableExplorerExecutors == null) {
       int threadCount =
